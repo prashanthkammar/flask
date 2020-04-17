@@ -1,0 +1,7 @@
+{% extends "layout.html" %}
+{% block body %}
+     <h1> Are you ready to play  {{g.user.name}}? If yes enter now!  </h1> 
+     <div>
+          <p><a type="button" class="btn btn-link" href="{{url_for('quiz')}}"><button>Enter</button></a></p>
+     </div>  
+     {% endblock %}
