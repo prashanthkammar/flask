@@ -37,12 +37,14 @@ class User(db.Model):
 
 class Quiz(db.Model):
     id=db.Column('id',db.Integer,primary_key=True)
-    q=db.Column('questions',db.String(1000))
+    q=db.Column('questions',db.String(1000)) 
     a=db.Column('answer',db.String(200))
+    o=db.Column('options',db.String(400))
 
-    def __init__(self,q,a):
-        self.q=q
-        self.a=a 
+    def __init__(self,q,o,a):
+        self.q=q 
+        self.a=a
+        self.o=o 
 
 
 
@@ -147,8 +149,10 @@ def quiz():
         current_question=ques 
     
     score=int(u.score)
+    opt=str(current_question.o)
+    opt=opt.split(',')
 
-    return render_template('quiz.html',current_question=current_question,score=score,done=done)
+    return render_template('quiz.html',current_question=current_question,score=score,opt=opt,done=done)
 
 @app.route('/process/<current_question>',methods=['POST'])
 def process(current_question):
@@ -160,18 +164,24 @@ def process(current_question):
 
     answer=request.form['ans']
 
-    if answer.lower()==ques.a:
+    if str(answer)==str(ques.a):
         score+=int(1)
-        question_num+=int(1)
+        
     
     else:
-         flash('Wrong answer')
+         flash('Previous answer was Wrong. Answer carefully')
 
+    question_num+=int(1)
     u.score=score
     u.nextq=question_num 
     db.session.commit()
 
     return redirect(url_for('quiz'))
+
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
 
 if __name__=='__main__':
     app.debug=True

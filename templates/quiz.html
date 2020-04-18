@@ -6,13 +6,16 @@
    <p>
       <b>{{ current_question.id }}:{{ current_question.q }}</b>
    </p>
-      <ul>
-         <input type="text" name="ans" value="" />
-      </ul>
+   <ul style="list-style: none;">
+      {% for option in opt %}
+      <li style="display: inline-block;"><input type="radio" name="ans" value="{{ option }}" /></li>
+      {{ option }} {% endfor %}
+    </ul>
+
       <input type="submit" value="Next" class="btn btn-primary " >
    
    </form>
    {% else %}
       <h3>Thank You for Playing</h3>
       {% endif %}
-     {% endblock %}
+   {% endblock %}
