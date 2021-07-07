@@ -1,7 +1,9 @@
 {% extends "layout.html" %}
 {% block body %}
-     <h1> Are you ready to play  {{g.user.name}}? If yes enter now!  </h1> 
+     <h2> Hello {{g.user.name}}! </h2> 
+     <br/>
      <div>
-          <p><a type="button" class="btn btn-link" href="{{url_for('quiz')}}"><button>Enter</button></a></p>
+          <p><a href="{{url_for('quiz')}}" class="btn btn-primary" role="button">Next</a></p>
      </div>  
      {% endblock %}
+     

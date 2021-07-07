@@ -37,14 +37,21 @@ class User(db.Model):
 
 class Quiz(db.Model):
     id=db.Column('id',db.Integer,primary_key=True)
-    q=db.Column('questions',db.String(1000))
+    q=db.Column('questions',db.String(1000)) 
     a=db.Column('answer',db.String(200))
+    o=db.Column('options',db.String(400))
 
-    def __init__(self,q,a):
-        self.q=q
-        self.a=a 
+    def __init__(self,q,o,a):
+        self.q=q 
+        self.a=a
+        self.o=o 
 
 
+def user_already_exists(users, email):
+    for user in users:
+        if user.email == email:
+            return True
+    return False
 
 
 @app.route('/',methods=['GET','POST'])
@@ -62,6 +69,9 @@ def home():
 def register():
     
     error=''
+    status = ''
+    users = User.query.all()
+
     if request.method=='POST':
         name=request.form['name']
         email=request.form['email']
@@ -69,50 +79,58 @@ def register():
         password=request.form['password']
         confirmpassword=request.form['confirmpassword']
 
-        
-        if password==confirmpassword: 
-            score=0
-            nextq=0
-            pw_hash=bcrypt.generate_password_hash(password)
-            new_user=User(name,email,phone,pw_hash,score,nextq)
-            db.session.add(new_user)
-            db.session.commit()
-            return redirect(url_for('login'))
+        if user_already_exists(users, email):
+            status = 'show'
+            error = 'User already exists'
         else:
-            error="Password didn't match"
-            return render_template('register.html',error=error)
+            if password==confirmpassword: 
+                score=0
+                nextq=0
+                pw_hash=bcrypt.generate_password_hash(password)
+                new_user=User(name,email,phone,pw_hash,score,nextq)
+                db.session.add(new_user)
+                db.session.commit()
+                return redirect(url_for('login'))
+            else:
+                status = 'show'
+                error="Password didn't match"
+                return render_template('register.html', status=status, error=error)
 
-    return render_template('register.html')
+    return render_template('register.html', status=status, error=error)
 
     
 @app.route('/login',methods=['GET','POST'])
-def login(): 
+def login():
+
     users=[]
     error=''
+    status = ''
     users= User.query.all()
     if request.method=='POST':
         session.pop('user_id',None)
-
         email=request.form['email']
         password=request.form['password']
-        user=''
+        user=None
         #user= [x for x in users if x.email==email ][0]
         for x in users:
-            if x.email==email:
-                user=x
-            else:
-                user=None
-        if user and bcrypt.check_password_hash(user.password,password) :
+            if x.email == email:
+                user = x
+                break
+
+        if user and bcrypt.check_password_hash(user.password,password):
             session['user_id']=user.id
             session["log"]=True
-            flash('You were successfully logged in')
+            flash('You were successfully logged in', "message")
             return redirect(url_for('profile'))
+        elif user == None:
+            status = 'show'
+            error="Incorrect credentials or user does not exist. Please Register"
+        else:
+            status = 'show'
+            error = 'Incorrect email address or password'
         
-        elif user==None:
-            error="Incorrect credentials. Please enter valid credential"
-
-        return render_template('login.html',error=error)
-    return render_template('login.html')
+        return render_template('login.html', status=status, error=error)
+    return render_template('login.html', status=status, error=error)
 
 @app.route('/logout')
 def logout():
@@ -147,8 +165,10 @@ def quiz():
         current_question=ques 
     
     score=int(u.score)
+    opt=str(current_question.o)
+    opt=opt.split(',')
 
-    return render_template('quiz.html',current_question=current_question,score=score,done=done)
+    return render_template('quiz.html',current_question=current_question,score=score,opt=opt,done=done)
 
 @app.route('/process/<current_question>',methods=['POST'])
 def process(current_question):
@@ -160,20 +180,26 @@ def process(current_question):
 
     answer=request.form['ans']
 
-    if answer.lower()==ques.a:
+    if str(answer)==str(ques.a):
         score+=int(1)
-        question_num+=int(1)
+        
     
     else:
-         flash('Wrong answer')
+         flash('Previous answer was Wrong. Answer carefully')
 
+    question_num+=int(1)
     u.score=score
     u.nextq=question_num 
     db.session.commit()
 
     return redirect(url_for('quiz'))
 
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
 if __name__=='__main__':
-    app.debug=True
+    # app.debug=True
     app.secret_key="efrwwseq4sfcwasdr3142qwdsf24wsd"
     app.run() 
